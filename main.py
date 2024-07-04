@@ -19,6 +19,10 @@ except FileNotFoundError:
 # Define tu aplicación FastAPI
 app = FastAPI()
 
+@app.get("/")
+def read_root():
+    return {"message": "Bienvenidos a mi API"}
+
 # Ruta para contar películas por mes
 @app.get("/cantidad_filmaciones_mes")
 
