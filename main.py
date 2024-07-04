@@ -2,6 +2,7 @@ from fastapi import FastAPI
 import pandas as pd
 #entorno_p1/SCRIPTS/activate
 #uvicorn main:app --reload
+#agregado render
 
 csv_file_path = ("./data/df_movie.csv")
 csv_file_path3 = ("./data/df_crew.csv")
