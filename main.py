@@ -1,5 +1,12 @@
 from fastapi import FastAPI
 import pandas as pd
+import ast
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
 #entorno_p1/SCRIPTS/activate
 #uvicorn main:app --reload
 #agregado render
@@ -7,11 +14,14 @@ import pandas as pd
 csv_file_path = ("./data/df_movie.csv")
 csv_file_path3 = ("./data/df_crew.csv")
 csv_file_path2 = ("./data/df_cast.csv")
+csv_file_path4 = ("./data/df_modelo1.csv")
 # Carga el archivo CSV en un DataFrame de Pandas
 try:
     df_movie = pd.read_csv(csv_file_path)
     df_cast = pd.read_csv(csv_file_path2)
     df_crew = pd.read_csv(csv_file_path3)
+    df_modelo = pd.read_csv(csv_file_path4)
+
     print("Archivo cargado correctamente.")
 except FileNotFoundError:
     print(f"Error: No se encontró el archivo {csv_file_path} y {csv_file_path2}. Verifica la ruta y asegúrate de que el archivo exista.")
@@ -235,3 +245,114 @@ def get_director1(nombre_director):
     resultado = f'El director {nombre_director} ha conseguido un retorno total de {retorno_total} con un costo total de {costo_total} y una ganancia total de {ganancia_total} y dirigió las siguientes películas: {peliculas_str}'
     
     return resultado
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+import pandas as pd
+import numpy as np
+import ast
+pd.set_option('display.max_columns', None)
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+# Extraer los 5 primeros actores
+df_cast['cast'] = df_cast.groupby('id').cumcount() + 1
+df_cast_top5 = df_cast[df_cast['cast'] <= 3]
+df_cast_top5 = df_cast_top5.groupby('id')['castname'].apply(list).reset_index()
+df_cast_top5.columns = ['id', 'top_5_actors']
+
+# Extraer el director
+df_directors = df_crew[df_crew['crewjob'] == 'Director']
+df_directors = df_directors.groupby('id')['crewname'].first().reset_index()
+df_directors.columns = ['id', 'director']
+
+# Merge con df_movie
+df_modelo = df_movie.merge(df_cast_top5, on='id', how='left')
+df_modelo = df_modelo.merge(df_directors, on='id', how='left')
+
+df_modelo = df_modelo[['id','title', 'overview', 'genres_names', 'top_5_actors', 'director']]
+
+df_modelo['title'] = df_modelo['title'].str.lower()
+# Unir los nombres de actores si están en una lista
+df_modelo['top_5_actors'] = df_modelo['top_5_actors'].apply(lambda x: ' '.join(x) if isinstance(x, list) else x)
+
+df_modelo['top_5_actors'] = df_modelo['top_5_actors'].str.lower()
+
+# Descargar stopwords y recursos de tokenización si aún no están descargados
+nltk.download('stopwords')
+nltk.download('punkt')
+
+# Definir stopwords en inglés y español
+stopwords_english = set(stopwords.words('english'))
+stopwords_spanish = set(stopwords.words('spanish'))
+
+# Función para tokenizar y eliminar stopwords manteniendo nombres completos de actores
+def tokenize_and_remove_stopwords(text, language='english'):
+    tokens = word_tokenize(text)
+    if language == 'english':
+        tokens = [word.lower() for word in tokens if word.isalpha() and word.lower() not in stopwords_english]
+    elif language == 'spanish':
+        tokens = [word.lower() for word in tokens if word.isalpha() and word.lower() not in stopwords_spanish]
+    return ' '.join(tokens)
+
+# Función para tokenizar y preprocesar múltiples columnas
+def preprocess_columns(df, columns=['overview', 'genres_names', 'top_5_actors', 'director'], language='english'):
+    for col in columns:
+        df[col] = df[col].apply(lambda x: tokenize_and_remove_stopwords(str(x), language))
+    return df
+
+# Ejemplo de uso:
+# Suponiendo que tienes un DataFrame df_modelo con las columnas 'overview', 'genres_names', 'top_5_actors', 'director'
+
+# Preprocesar las columnas relevantes
+df_modelo = preprocess_columns(df_modelo)
+
+
+df_modelo['genres_names'] = df_modelo['genres_names'].apply(lambda x: x.split(', '))
+df_modelo['top_5_actors'] = df_modelo['top_5_actors'].apply(lambda x: x.split(', '))
+df_modelo['director'] = df_modelo['director'].apply(lambda x: x.split(', '))
+
+
+
+# Vectorización y cálculo de similitudes (fuera de la función del endpoint)
+vectorizer = TfidfVectorizer(stop_words='english')
+
+X_overview = vectorizer.fit_transform(df_modelo['overview'].fillna('').values.astype('U'))
+X_genres = vectorizer.fit_transform(df_modelo['genres_names'].apply(lambda x: ' '.join(x)).fillna('').values.astype('U'))
+X_actors = vectorizer.fit_transform(df_modelo['top_5_actors'].apply(lambda x: ' '.join(x)).fillna('').values.astype('U'))
+X_director = vectorizer.fit_transform(df_modelo['director'].apply(lambda x: ' '.join(x)).fillna('').values.astype('U'))
+
+@app.get("/recomendacion232")
+def obtener_peliculas_similares(titulo_pelicula):
+    # Obtener el índice de la película objetivo por el título
+    index_pelicula_objetivo = df_modelo[df_modelo['title'].str.lower() == titulo_pelicula.lower()].index[0]
+    
+    # Calcular la similitud del coseno para cada característica por separado
+    similarity_overview = cosine_similarity(X_overview[index_pelicula_objetivo], X_overview).flatten()
+    similarity_genres = cosine_similarity(X_genres[index_pelicula_objetivo], X_genres).flatten()
+    similarity_actors = cosine_similarity(X_actors[index_pelicula_objetivo], X_actors).flatten()
+    similarity_director = cosine_similarity(X_director[index_pelicula_objetivo], X_director).flatten()
+
+    # Calcular la similitud combinada (promedio de las similitudes)
+    similarity_combined = (similarity_overview + similarity_genres + similarity_actors + similarity_director) / 4.0
+
+    # Obtener los índices ordenados por similitud (excluyendo la película objetivo)
+    similarity_scores_sorted_indices = similarity_combined.argsort()[::-1]
+
+    # Top N películas más similares (excluyendo la propia película)
+    top_n = 5
+    top_n_indices = similarity_scores_sorted_indices[1:top_n + 1]
+
+    # Obtener los títulos de las películas más similares
+    peliculas_similares = df_modelo.iloc[top_n_indices]['title'].values
+
+    # Formatear el resultado como texto
+    resultados = f"Películas más similares a '{titulo_pelicula}':"
+    for i, titulo in enumerate(peliculas_similares, start=1):
+        resultados += f"las recomendaciones son {i}- {titulo}"
+
+    return resultados
