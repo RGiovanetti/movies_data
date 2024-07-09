@@ -362,4 +362,4 @@ def obtener_peliculas_similares(titulo_pelicula):
         
     resultados = f"Películas más similares a '{titulo_pelicula}': {lis}"
 
-    return resultados
+    return resultados 

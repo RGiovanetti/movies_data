@@ -2,7 +2,16 @@
 
 ### Introducción
 
-Este proyecto tiene como objetivo desarrollar un sistema de recomendación de películas utilizando técnicas avanzadas de machine learning como la vectorización de texto y la similitud del coseno. Desde la limpieza de datos (ETL) hasta el despliegue de una API con FastAPI en la plataforma de Render, el proyecto abarca varias etapas cruciales dentro del mundo de los datos (procesos de data engineer, análisis de datos, hasta el desarrollo de un modelo de ML) para su implementación efectiva.
+Este proyecto tiene como objetivo desarrollar un sistema de recomendación de películas (MVP) utilizando técnicas avanzadas de machine learning como la vectorización de texto y la similitud del coseno. Desde la limpieza de datos (ETL) hasta el despliegue de una API con FastAPI en la plataforma de Render, el proyecto abarca varias etapas cruciales dentro del mundo de los datos (procesos de data engineer, análisis de datos, hasta el desarrollo de un modelo de ML) para su implementación efectiva.
+
+# links de interés
+## Enlaces
+
+- [Video Explicación del Proyecto](https://drive.google.com/drive/u/1/folders/1v8Kdv2PltsZovzjhrPYI5J4pCF5tMyhY)
+- [FastAPI en Render](https://movies-data-sj8r.onrender.com/docs)
+- [Dataset Original](https://drive.google.com/drive/folders/1X_LdCoGTHJDbD28_dJTxaD4fVuQC9Wt5)
+- [Repositorio en GitHub](https://github.com/RGiovanetti)
+
 
 ### Tabla de Contenidos
 
@@ -22,7 +31,17 @@ En los archivos etl_movies.ipynb y etl_Credit.ipynb del repositorio se detallan 
 
 ### Creación de la API con FastAPI
 
-La carpeta del proyecto API contiene los detalles sobre la configuración y desarrollo de la API utilizando FastAPI. Esta API se conecta directamente a los datos procesados durante el ETL y ofrece 6 endpoints principales para consultas específicas como películas por mes, puntajes, votos, detalles de actores y directores.
+La carpeta del proyecto API contiene los detalles sobre la configuración y desarrollo de la API utilizando FastAPI. Esta API se conecta directamente a los datos procesados durante el ETL y ofrece 8 endpoints principales para consultas específicas como películas por mes, puntajes, votos, detalles de actores y directores.
+
+- Películas por mes: get_movies_by_month (escribimos el 'mes' y nos devuelve la cantidad de títulos hechos en ese mes)
+- Películas por día: get_movies_by_day (escribimos el 'día' y nos devuelve la cantidad de títulos hechos en ese día)
+- Score de película: get_movie_score (escribimos el título y nos devuelve su puntaje)
+- Votación de película: get_movie_votes_average (escribimos el título y nos devuelve su número de votos y promedio)
+- Consulta de actor: get_actor_info (retorna información sobre un actor específico y sus filmaciones. Si se busca un apellido/nombre común trae la cantidad de actores con ese apellido)
+- Consulta de actorsindirecto: get_non_director_actor_info (retorna información sobre un actor que no es director en sus filmaciones)
+- Consulta de director: get_director_info (retorna información sobre un director específico y sus filmaciones)
+- Sistema de recomendación: get_recomendacion (ponemos el titulo de una funcion y nos retorna una lista con 5 peliculas recomendadas, basada en el titulo, genero, actor y director)
+
 
 ### Análisis exploratorio de los Datos (EDA)
 
