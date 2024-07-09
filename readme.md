@@ -10,7 +10,7 @@ Este proyecto tiene como objetivo desarrollar un sistema de recomendación de pe
 - [Video Explicación del Proyecto](https://drive.google.com/drive/u/1/folders/1v8Kdv2PltsZovzjhrPYI5J4pCF5tMyhY)
 - [FastAPI en Render](https://movies-data-sj8r.onrender.com/docs)
 - [Dataset Original](https://drive.google.com/drive/folders/1X_LdCoGTHJDbD28_dJTxaD4fVuQC9Wt5)
-- [Repositorio en GitHub](https://github.com/RGiovanetti)
+- [Mi Repositorio](https://github.com/RGiovanetti?tab=repositories)
 
 
 ### Tabla de Contenidos
